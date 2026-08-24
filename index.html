@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>WikiBoard — Infinite Research Board</title>
+    <meta name="description" content="WikiBoard — infinite-canvas research board powered by live Wikipedia: search, drag cards, spawn related, draw connections. CRDT sync, XSS-safe, Y2K lab. By Rahul Raj Singh.">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="lab.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,500;1,300&family=JetBrains+Mono:wght@300;400&family=VT323&family=Boogaloo&family=Space+Grotesk:wght@300;400;500;600;700&family=Pixelify+Sans:wght@400;700&family=Press+Start+2P&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+
+    <canvas id="glitterCanvas"></canvas>
+    <canvas id="bgCanvas"></canvas>
+    <div class="y2k-bg-pattern"></div>
+    <div class="y2k-grid"></div>
+
+    <div class="modal-overlay hidden" id="kbdModal">
+        <div class="kbd-modal">
+            <button class="kbd-modal-close" id="kbdModalClose">✕</button>
+            <h2>⌨ WikiBoard Shortcuts</h2>
+            <div class="kbd-row"><span>Search Wikipedia</span><span class="kbd-key">S / /</span></div>
+            <div class="kbd-row"><span>Select tool</span><span class="kbd-key">V</span></div>
+            <div class="kbd-row"><span>Pan tool</span><span class="kbd-key">H</span></div>
+            <div class="kbd-row"><span>Connect</span><span class="kbd-key">C</span></div>
+            <div class="kbd-row"><span>Sticky note</span><span class="kbd-key">N</span></div>
+            <div class="kbd-row"><span>Text label</span><span class="kbd-key">T</span></div>
+            <div class="kbd-row"><span>Erase mode</span><span class="kbd-key">E</span></div>
+            <div class="kbd-row"><span>Delete selected</span><span class="kbd-key">Del</span></div>
+            <div class="kbd-row"><span>Fit screen</span><span class="kbd-key">F</span></div>
+            <div class="kbd-row"><span>Zoom in/out</span><span class="kbd-key">+ / −</span></div>
+            <div class="kbd-row"><span>Duplicate</span><span class="kbd-key">Ctrl+D</span></div>
+            <div class="kbd-row"><span>Show this panel</span><span class="kbd-key">?</span></div>
+            <div class="kbd-row"><span>Close modal</span><span class="kbd-key">Esc</span></div>
+        </div>
+    </div>
+
+    <div class="ticker-wrap" aria-hidden="true">
+        <div class="ticker-content">
+            <span>✦ WikiBoard by Rahul Raj Singh ✦</span><span class="ticker-star">★</span>
+            <span>INFINITE CANVAS · WIKIPEDIA API · origin=* CORS</span><span class="ticker-star">★</span>
+            <span>CRDT SYNC · XSS-SAFE · SVG ARROWS</span><span class="ticker-star">★</span>
+            <span>ZOOM-TO-CURSOR · WORLD ↔ SCREEN · MINIMAP</span><span class="ticker-star">★</span>
+            <span>✦ WikiBoard by Rahul Raj Singh ✦</span><span class="ticker-star">★</span>
+            <span>INFINITE CANVAS · WIKIPEDIA API · origin=* CORS</span><span class="ticker-star">★</span>
+            <span>CRDT SYNC · XSS-SAFE · SVG ARROWS</span><span class="ticker-star">★</span>
+        </div>
+    </div>
+
+    <nav class="cyber-nav">
+        <div class="nav-container">
+            <div class="logo">
+                <div class="logo-icon"><i class="fas fa-book-open"></i></div>
+                <span class="logo-text">WIKI<span class="accent">Board</span></span>
+            </div>
+            <div class="nav-links">
+                <a href="#concepts"><i class="fas fa-bolt"></i> Concepts</a>
+                <a href="#simulator"><i class="fas fa-flask"></i> Board</a>
+                <a href="#library"><i class="fas fa-book"></i> Library</a>
+                <a href="#architecture"><i class="fas fa-layer-group"></i> Architecture</a>
+            </div>
+            <button class="dark-toggle" id="darkToggle">🌙 Dark</button>
+            <span class="kbd-badge" id="kbdOpenBtn" title="Keyboard shortcuts">⌨ ?</span>
+            <button class="mobile-menu-btn" id="mobileMenuBtn"><i class="fas fa-bars"></i></button>
+        </div>
+        <div class="mobile-nav" id="mobileNav">
+            <a href="#concepts">Concepts</a>
+            <a href="#simulator">Board</a>
+            <a href="#library">Library</a>
+            <a href="#architecture">Architecture</a>
+        </div>
+    </nav>
+
+    <main>
+        <section class="hero">
+            <div class="hero-particles" aria-hidden="true">
+                <div class="y2k-star">✦</div><div class="y2k-star">★</div><div class="y2k-star">✧</div><div class="y2k-star">✶</div><div class="y2k-star">✸</div>
+            </div>
+            <div class="hero-content">
+                <div class="badge"><span class="badge-dot"></span> created by Rahul Raj Singh</div>
+                <h1 class="hero-title">
+                    <span class="title-line accent-line" style="--d:1">WIKI</span>
+                    <span class="title-line dim-line" style="--d:2">BOARD ✦</span>
+                </h1>
+                <p class="hero-sub">
+                    Search live <strong>Wikipedia</strong>, drag articles onto an <strong>infinite zoom/pan research canvas</strong>, click links to spawn connected cards, and draw relationships into a visual knowledge map.<br>
+                    <span class="mono-text">world.translate + scale · zoom-to-cursor · CORS origin=* · DOMParser XSS-safe</span>
+                </p>
+                <div class="hero-cta">
+                    <a href="#simulator" class="cta-primary"><i class="fas fa-flask"></i> Open Board</a>
+                    <a href="#concepts" class="cta-secondary"><i class="fas fa-book"></i> How it Works</a>
+                </div>
+                <div class="hero-stats">
+                    <div class="stat-pill"><span class="stat-num">∞</span><span class="stat-label">Canvas</span></div>
+                    <div class="stat-pill"><span class="stat-num">6</span><span class="stat-label">Example Boards</span></div>
+                    <div class="stat-pill"><span class="stat-num">CRDT</span><span class="stat-label">Sync</span></div>
+                </div>
+            </div>
+            <div class="hero-terminal">
+                <div class="terminal-bar">
+                    <span class="t-dot red"></span><span class="t-dot yellow"></span><span class="t-dot green"></span>
+                    <span class="t-title">wikiboard_rahul</span>
+                </div>
+                <div class="terminal-body" id="heroTerminal"></div>
+            </div>
+        </section>
+
+        <div class="token-strip" aria-hidden="true">
+            <div class="token-strip-inner">
+                <span class="token-chip-strip"><span class="kw">search</span> → <span class="op">Wikipedia API</span> → <span class="num">CARD</span> · pan/zoom via world <span class="kw">transform</span></span>
+                <span class="token-chip-strip">XSS-SAFE sanitise · DOMParser + allow-list <span class="kw">&lt;strong&gt;</span></span>
+                <span class="token-chip-strip">WORLD ↔ SCREEN · minimap viewport rect</span>
+                <span class="token-chip-strip">SVG overlay inside world · bezier arrows</span>
+                <span class="token-chip-strip"><span class="kw">search</span> → <span class="op">Wikipedia API</span> → <span class="num">CARD</span> · pan/zoom via world <span class="kw">transform</span></span>
+            </div>
+        </div>
+
+        <section id="concepts" class="section-container">
+            <div class="section-header">
+                <div class="section-tag">01 — CORE IDEA</div>
+                <h2 class="section-title"><span class="bracket">〈</span> HOW IT WORKS <span class="bracket">〉</span></h2>
+                <p class="section-desc">One giant <code>world</code> element with <code>translate + scale</code>. Cards store world coordinates; SVG arrows live inside the same transform so they pan/zoom with you.</p>
+            </div>
+            <div class="phases-timeline">
+                <div class="phase-card">
+                    <div class="phase-num">CONCEPT 01</div><span class="phase-icon">🗺️</span>
+                    <h3>Infinite Canvas</h3>
+                    <p><code>world.style.transform = translate(tx,ty) scale(s)</code> moves one container. Cards never move for navigation — the world does.</p><span class="phase-tag">translate + scale</span>
+                </div>
+                <div class="phase-card">
+                    <div class="phase-num">CONCEPT 02</div><span class="phase-icon">🔍</span>
+                    <h3>Zoom-to-Cursor</h3>
+                    <p>Clamp new scale, compute ratio <code>r</code>, adjust <code>tx = cx - r*(cx - tx)</code> so the point under your mouse stays fixed.</p><span class="phase-tag">zoom math · interview fav</span>
+                </div>
+                <div class="phase-card">
+                    <div class="phase-num">CONCEPT 03</div><span class="phase-icon">🌐</span>
+                    <h3>Wikipedia CORS</h3>
+                    <p>Browser calls Wikipedia directly with <code>origin=*</code> (permissive CORS header) — no server proxy. <code>fetch</code> + <code>async/await</code>.</p><span class="phase-tag">fetch + origin=*</span>
+                </div>
+                <div class="phase-card">
+                    <div class="phase-num">CONCEPT 04</div><span class="phase-icon">🛡️</span>
+                    <h3>XSS-Safe Content</h3>
+                    <p>Article HTML parsed with <code>DOMParser</code> inertly, paragraphs extracted, all tags stripped except <code>&lt;strong&gt;</code> and <code>&lt;br&gt;</code> before <code>innerHTML</code>.</p><span class="phase-tag">sanitize · security</span>
+                </div>
+                <div class="phase-card">
+                    <div class="phase-num">CONCEPT 05</div><span class="phase-icon">↗</span>
+                    <h3>SVG Connections</h3>
+                    <p>Arrows drawn as SVG paths <em>inside</em> the world so they inherit the transform. Curved/straight/stepped + dashed/open/no-arrow styles.</p><span class="phase-tag">bezier · SVG marker</span>
+                </div>
+                <div class="phase-card">
+                    <div class="phase-num">CONCEPT 06</div><span class="phase-icon">🔄</span>
+                    <h3>CRDT Board Sync</h3>
+                    <p>Operations (<code>createNode, addConn…</code>) are LWW CRDT ops with lamport clock. <code>syncMerge</code> deduplicates and re-applies missing ops for multi-peer sync.</p><span class="phase-tag">CRDT · opLog</span>
+                </div>
+            </div>
+        </section>
+
+        <section id="simulator" class="section-container">
+            <div class="section-header">
+                <div class="section-tag">02 — INTERACTIVE LAB</div>
+                <h2 class="section-title"><span class="bracket">⎡</span> RESEARCH BOARD <span class="bracket">⎦</span></h2>
+                <p class="section-desc">Search Wikipedia above. Drag cards, connect via ports, right-click for options. Scroll to zoom toward cursor, minimap to jump.</p>
+            </div>
+
+            <div class="lab-container">
+                <div class="lab-header">
+                    <i class="fas fa-flask"></i> WikiBoard Lab
+                    <span class="lab-badge" style="margin-left:auto">Y2K ENGINE</span>
+                </div>
+
+                <div class="sim-toolbar">
+                    <button class="tool-btn" id="tb-wire" onclick="setTool('connect')">CONNECT [C]</button>
+                    <button class="tool-btn" id="tb-select" onclick="setTool('select')">SELECT [V]</button>
+                    <button class="tool-btn" onclick="clearBoard()">CLEAR</button>
+                    <button class="tool-btn" onclick="saveBoard()">SAVE</button>
+                    <button class="tool-btn" onclick="loadBoard()">LOAD</button>
+                    <button class="tool-btn" onclick="exportJSON()"><i class="fas fa-file-code"></i> JSON</button>
+                    <button class="tool-btn" onclick="exportSVG()"><i class="fas fa-file-image"></i> SVG</button>
+                    <div class="sim-status stopped" id="sim-status">● IDLE</div>
+                </div>
+
+                <div class="sim-toolbar" style="margin-top:8px">
+                    <button class="tool-btn" onclick="loadExample('philosophy_map')">PHILOSOPHY</button>
+                    <button class="tool-btn" onclick="loadExample('science_overview')">SCIENCE</button>
+                    <button class="tool-btn" onclick="loadExample('history_timeline')">HISTORY</button>
+                    <button class="tool-btn" onclick="loadExample('tech_stack')">TECH</button>
+                    <button class="tool-btn" onclick="loadExample('art_movement')">ART</button>
+                    <button class="tool-btn" onclick="loadExample('empty_starter')">BLANK</button>
+                </div>
+
+                <div class="simulator-layout" style="margin-top:14px">
+                    <div class="left-panel">
+                        <div class="lp-sec">
+                            <div class="lp-h">BOARD TOOLS</div>
+                            <div class="comp-list">
+                                <div class="comp-btn sel" id="cb-select" data-tool="select" onclick="setTool('select')"><span class="comp-icon">⟡</span><span class="comp-name">Select</span><span class="comp-key">V</span></div>
+                                <div class="comp-btn" id="cb-pan" data-tool="pan" onclick="setTool('pan')"><span class="comp-icon">✋</span><span class="comp-name">Pan</span><span class="comp-key">H</span></div>
+                                <div class="comp-btn" id="cb-connect" data-tool="connect" onclick="setTool('connect')"><span class="comp-icon">↗</span><span class="comp-name">Connect</span><span class="comp-key">C</span></div>
+                                <div class="comp-btn" id="cb-sticky" data-tool="sticky" onclick="setTool('sticky')"><span class="comp-icon">📝</span><span class="comp-name">Sticky</span><span class="comp-key">N</span></div>
+                                <div class="comp-btn" id="cb-text" data-tool="text" onclick="setTool('text')"><span class="comp-icon">T</span><span class="comp-name">Text</span><span class="comp-key">T</span></div>
+                                <div class="comp-btn" id="cb-group" data-tool="group" onclick="setTool('group')"><span class="comp-icon">▦</span><span class="comp-name">Group</span><span class="comp-key">G</span></div>
+                                <div class="comp-btn" id="cb-erase" data-tool="erase" onclick="setTool('erase')"><span class="comp-icon">⌫</span><span class="comp-name">Erase</span><span class="comp-key">E</span></div>
+                            </div>
+                        </div>
+                        <div class="lp-sec">
+                            <div class="lp-h">SEARCH</div>
+                            <input id="lp-search" placeholder="Wikipedia…" style="width:100%;padding:6px 8px;font-family:'VT323',monospace;font-size:12px;background:#0a0a0a;border:1px solid #333;color:#ccc;border-radius:6px;outline:none;">
+                            <button class="tool-btn" style="margin-top:6px;width:100%" onclick="lpSearch()">SEARCH</button>
+                        </div>
+                        <div class="lp-sec">
+                            <div class="lp-h">SELECTED</div>
+                            <div class="prop-panel" id="prop-panel">Nothing selected</div>
+                        </div>
+                        <div class="lp-sec" style="flex:1">
+                            <div class="lp-h">BOARD LOG</div>
+                            <div class="sim-log" id="sim-log"></div>
+                        </div>
+                    </div>
+
+                    <div id="canvas-wrap">
+                        <div id="topbar">
+                            <div id="logo">wiki<em>board</em></div>
+                            <div id="swrap">
+                                <input id="sinp" placeholder="Search Wikipedia…" autocomplete="off" spellcheck="false"/>
+                                <button id="sgo" title="Search"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="6.5" cy="6.5" r="4.5"/><path d="M10.5 10.5l3.5 3.5"/></svg></button>
+                                <div id="ac"></div>
+                            </div>
+                            <div class="tgap"></div>
+                            <button class="topbtn" id="btn-fit">⛶ Fit</button>
+                            <button class="topbtn" id="btn-clear">Clear</button>
+                            <button class="topbtn" id="btn-export">Export</button>
+                            <button class="topbtn" id="btn-theme">☀ Light</button>
+                        </div>
+
+                        <div id="canvas">
+                            <div id="world">
+                                <svg id="svg-layer" xmlns="http://www.w3.org/2000/svg">
+                                    <defs>
+                                        <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto" markerUnits="strokeWidth"><path d="M1,1 L1,7 L8,4 z" fill="#8a837a"/></marker>
+                                        <marker id="arr-sel" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto" markerUnits="strokeWidth"><path d="M1,1 L1,7 L8,4 z" fill="#2563eb"/></marker>
+                                        <marker id="arr-open" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto" markerUnits="strokeWidth"><path d="M2,2 L6,4 L2,6" fill="none" stroke="#8a837a" stroke-width="1"/></marker>
+                                        <marker id="arr-open-sel" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto" markerUnits="strokeWidth"><path d="M2,2 L6,4 L2,6" fill="none" stroke="#2563eb" stroke-width="1"/></marker>
+                                    </defs>
+                                    <path id="dp"/>
+                                </svg>
+                            </div>
+                        </div>
+
+                        <div id="welcome">
+                            <div>
+                                <h1>start researching</h1>
+                                <p>search wikipedia above to open articles<br>drag ports to draw connections · right-click anything</p>
+                            </div>
+                        </div>
+
+                        <div id="toolbar">
+                            <button class="tbb on" id="tl-select"><svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M2 1l5 13.5 2.2-5.8L15 6.7z"/></svg><span class="tbtip">Select V</span></button>
+                            <button class="tbb" id="tl-pan"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M18 11V9a2 2 0 00-4 0v1M14 9V7a2 2 0 00-4 0v2M10 8a2 2 0 00-4 0v5M6 13v1a6 6 0 006 6h2a6 6 0 006-6v-3a2 2 0 00-4 0"/></svg><span class="tbtip">Pan H</span></button>
+                            <div class="tbsep"></div>
+                            <button class="tbb" id="tl-connect"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="3" cy="3" r="2"/><circle cx="13" cy="13" r="2"/><line x1="4.4" y1="4.4" x2="11.6" y2="11.6"/></svg><span class="tbtip">Connect C</span></button>
+                            <button class="tbb" id="tl-sticky"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="2" y="2" width="12" height="12" rx="1.5"/><line x1="5" y1="6" x2="11" y2="6"/><line x1="5" y1="9" x2="9" y2="9"/></svg><span class="tbtip">Sticky N</span></button>
+                            <button class="tbb" id="tl-text"><svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M2 3h12v2H9.5v8h-3V5H2z"/></svg><span class="tbtip">Text T</span></button>
+                            <button class="tbb" id="tl-arrow"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 8h10M9 5l3 3-3 3"/></svg><span class="tbtip">Arrow A</span></button>
+                            <div class="tbsep"></div>
+                            <button class="tbb" id="tl-group"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="1.5" y="1.5" width="5" height="5" rx="1"/><rect x="9.5" y="1.5" width="5" height="5" rx="1"/><rect x="1.5" y="9.5" width="5" height="5" rx="1"/><rect x="9.5" y="9.5" width="5" height="5" rx="1"/></svg><span class="tbtip">Group G</span></button>
+                            <button class="tbb" id="tl-erase"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 13l4-4m5-6L5 10"/><path d="M6.5 4.5l5 5"/><line x1="1" y1="15" x2="15" y2="15"/></svg><span class="tbtip">Erase E</span></button>
+                            <div class="tbsep"></div>
+                            <button class="tbb" id="tl-help"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6.5"/><path d="M6 6c0-1.1.9-2 2-2s2 .9 2 2c0 1-1 1.5-2 2v1"/><circle cx="8" cy="12" r=".7" fill="currentColor" stroke="none"/></svg><span class="tbtip">Help ?</span></button>
+                        </div>
+
+                        <div id="panel">
+                            <h4>Keyboard shortcuts</h4>
+                            <div class="sck"><span class="scl">Search</span><kbd>S</kbd></div>
+                            <div class="sck"><span class="scl">Select</span><kbd>V</kbd></div>
+                            <div class="sck"><span class="scl">Pan</span><kbd>H</kbd></div>
+                            <div class="sck"><span class="scl">Connect</span><kbd>C</kbd></div>
+                            <div class="sck"><span class="scl">Sticky note</span><kbd>N</kbd></div>
+                            <div class="sck"><span class="scl">Text label</span><kbd>T</kbd></div>
+                            <div class="sck"><span class="scl">Erase</span><kbd>E</kbd></div>
+                            <div class="sck"><span class="scl">Delete selected</span><kbd>Del</kbd></div>
+                            <div class="sck"><span class="scl">Fit screen</span><kbd>F</kbd></div>
+                            <div class="sck"><span class="scl">Zoom</span><kbd>+</kbd> / <kbd>−</kbd></div>
+                            <div class="sck"><span class="scl">Duplicate</span><kbd>Ctrl+D</kbd></div>
+                            <div class="sck"><span class="scl">Escape</span><kbd>Esc</kbd></div>
+                        </div>
+
+                        <div id="zbox">
+                            <button class="zmb" id="zm-in">+</button>
+                            <div id="zval">100%</div>
+                            <button class="zmb" id="zm-out">−</button>
+                        </div>
+
+                        <div id="mmap"><canvas id="mmc" width="138" height="88"></canvas></div>
+
+                        <div id="sbar">
+                            <span class="si" id="si-n">0 nodes</span><div class="ssep"></div><span class="si" id="si-c">0 connections</span><div class="ssep"></div><span class="si" id="si-t">select</span><div class="ssep"></div><span class="si" id="si-tip">search wikipedia · drag ports to connect · right-click for options</span>
+                        </div>
+
+                        <div id="toast"></div>
+                    </div>
+                </div>
+
+                <div id="preview-svg" class="lab-svg-wrap" style="display:none"></div>
+
+                <!-- Connection menu -->
+                <div id="cmenu" class="menu">
+                    <div class="mhead">Connection</div>
+                    <div class="mi" id="cm-curved">~ Curved</div>
+                    <div class="mi" id="cm-straight">⟶ Straight</div>
+                    <div class="mi" id="cm-stepped">⌐ Stepped</div>
+                    <div class="msep"></div>
+                    <div class="mi" id="cm-dashed">- Dashed</div>
+                    <div class="mi" id="cm-openarrow">› Open arrow</div>
+                    <div class="mi" id="cm-noline">◦ No arrowhead</div>
+                    <div class="msep"></div>
+                    <div class="mi" id="cm-label">✎ Add label</div>
+                    <div class="mi" id="cm-reverse">⇄ Reverse</div>
+                    <div class="msep"></div>
+                    <div class="mi del" id="cm-del">✕ Delete</div>
+                </div>
+
+                <div id="nmenu" class="menu">
+                    <div class="mhead">Article</div>
+                    <div class="mi" id="nm-wiki">↗ Open Wikipedia</div>
+                    <div class="mi" id="nm-imgs">⊞ Pop out images</div>
+                    <div class="mi" id="nm-related">⊕ Load related</div>
+                    <div class="mi" id="nm-dup">⎘ Duplicate</div>
+                    <div class="mi" id="nm-color">◉ Change color</div>
+                    <div class="mi" id="nm-collapse">▲ Collapse</div>
+                    <div class="msep"></div>
+                    <div class="mi del" id="nm-del">✕ Delete</div>
+                </div>
+            </div>
+        </section>
+
+        <section id="library" class="section-container">
+            <div class="section-header">
+                <div class="section-tag">03 — EXAMPLES</div>
+                <h2 class="section-title"><span class="bracket">⟦</span> BOARD LIBRARY <span class="bracket">⟧</span></h2>
+                <p class="section-desc">Pre-built research maps. Click any card to load it in the board above — then expand by searching and spawning related articles.</p>
+            </div>
+            <div id="libraryGrid" class="phases-timeline"></div>
+        </section>
+
+        <section id="truth" class="section-container">
+            <div class="section-header">
+                <div class="section-tag">04 — REFERENCE</div>
+                <h2 class="section-title"><span class="bracket">⦅</span> WIKI API & SAFETY <span class="bracket">⦆</span></h2>
+                <p class="section-desc">Endpoints, sanitization allow-list, and transform math proven by Node unit tests via <code>WikiEngine</code> (UMD).</p>
+            </div>
+            <div id="wikiRef" class="phases-timeline"></div>
+        </section>
+
+        <section id="architecture" class="section-container">
+            <div class="section-header">
+                <div class="section-tag">05 — FAANG-LEVEL DESIGN</div>
+                <h2 class="section-title"><span class="bracket">⧩</span> ARCHITECTURE <span class="bracket">⧩</span></h2>
+                <p class="section-desc">Single-file 1089-line prototype refactored to modular UMD + Worker + Viz + library + tests — same pattern as Compiler Forge & Logic Forge.</p>
+            </div>
+            <div class="deep-card">
+                <h3><i class="fas fa-sitemap"></i> Module Map</h3>
+                <pre class="code-block" style="font-size:.82rem; line-height:1.7; white-space:pre-wrap;"> index.html  → loads style.css + lab.css (Y2K + paper board)
+            ↳ wiki-engine.js  (UMD: browser / Worker / Node)  — WORLD/COLS, setOf/addAll, esc/sanitizeContent, worldToScreen/screenToWorld, c2w/w2c, zoomTransform, computeFit, portAnchor/bestSides/mkPath, Wiki URL builders, board state (Map+Array), CRDT opLog + vectorClock + syncMerge
+            ↳ wiki-worker.js  (Web Worker) — importScripts(wiki-engine.js), onmessage {sanitize|portAnchor|mkPath|createNode|applyOp|merge|computeFit|wikiUrls|ping}
+            ↳ viz.js          (UMD) — esc() XSS-safe, buildNodeSVG / buildStickySVG / buildConnectionSVG / buildBoardSVG (dot grid, minimap-aware)
+            ↳ wiki-library.js (UMD) — boards: philosophy_map · science_overview · history_timeline · tech_stack · art_movement · empty_starter
+            ↳ app-integration.js — Worker lifecycle + sanitizeAsync / syncAsync + loadExampleAsync (WikiLibrary→WikiEngine)
+            ↳ script.js       — board UI: G state (Map-backed), infinite canvas via CSS transform, zoom-to-cursor, Wikipedia fetch (origin=*), safe rendering, ports/connections, stickies/texts/images/groups, generic drag, canvas events, toolbars, search + autocomplete, keyboard, minimap, menus, save/load, integration hooks (uses WikiEngine if present)
+ tests/run-tests.js → wiki-engine.test.js + viz.test.js (Node assert, proof of CRDT, transforms, XSS)
+</pre>
+            </div>
+            <div class="deep-card">
+                <h3><i class="fas fa-file-code"></i> File-by-File</h3>
+                <div style="font-family:var(--font-pixel); font-size:.84rem; line-height:1.9; color:var(--text-muted)">
+                    <strong style="color:var(--hot-pink)">wiki-engine.js</strong> — Core truth. <code>WORLD/COLS</code>, <code>setOf/addAll</code>, <code>esc/sanitizeContent</code> (regex + allow-list), <code>worldToScreen/screenToWorld/c2w/w2c</code>, <code>zoomTransform</code> (tx = cx - r*(cx - tx)), <code>computeFit</code> (bbox → scale/tx/ty), <code>portAnchor/bestSides/mkPath</code> (SVG bezier), <code>buildSearchUrl/…</code> (pure URL builders), board state <code>Map(nodes)+Map(conns)+Map(stickies)…</code>, <code>boardCreateNode/addConn…</code> (each emits CRDT op), <code>createOp/applyOp/mergeOps/syncMerge</code> (LWW + lamport), <code>serialize/deserialize</code>, UMD wrapper.<br>
+                    <strong style="color:var(--hot-pink)">wiki-worker.js</strong> — Offloads sanitization & CRDT. <code>importScripts('wiki-engine.js')</code> try/catch, <code>onmessage</code> handles <code>sanitize/esc/portAnchor/mkPath/createNode/applyOp/merge/computeFit/wikiUrls/ping</code>, timeout fallback in app-integration.<br>
+                    <strong style="color:var(--hot-pink)">viz.js</strong> — XSS-safe SVG. <code>esc()</code>, <code>buildNodeSVG</code> (paper card + ports), <code>buildConnectionSVG</code> (bezier + marker), <code>buildBoardSVG</code> (bounds → dot grid + wires behind nodes + footer), <code>drawMinimapCanvas</code> (canvas minimap), UMD.<br>
+                    <strong style="color:var(--hot-pink)">wiki-library.js</strong> — Declarative boards. Each has <code>nodes{title,x,y,w,h,colIdx}[] + conns{from{idx},to{idx},style,label}[] + stickies/texts</code>. Helpers <code>get/list/injectExample/instantiate(WE)</code> mirroring <code>logic-library.js</code>.<br>
+                    <strong style="color:var(--hot-pink)">app-integration.js</strong> — Bridges UI↔engine↔worker. <code>initWorker</code> (require http, not file:), <code>workerExec</code> promise map + 2.5s timeout, <code>sanitizeAsync/syncAsync</code> with main-thread fallback, <code>loadExampleAsync(state)</code> via WikiLibrary + WikiEngine.<br>
+                    <strong style="color:var(--hot-pink)">script.js</strong> — The board lab. <code>G</code> now backed by <code>Map</code> but wrapped for legacy DOM access; uses <code>WikiEngine</code> if present for esc/sanitize/mkPath/bestSides/world↔screen, otherwise inline fallback; keeps all original features (search+AC, wSearch/wSummary/wImages, mkNodeEl/hook, renderContent sanitised, collapse/cycle, loadRelated, drag/resize/ports, connections SVG inside world, stickies/texts/images/groups, canvas pan/zoom/minimap, toolbar, menus, keyboard, save/load, export JSON/SVG via Viz).<br>
+                    <strong style="color:var(--hot-pink)">index.html / style.css / lab.css</strong> — Y2K maximalist shell (glitterCanvas, bgCanvas, ticker, cyber-nav, hero with terminal typewriter, token-strip, section-containers, lab flex). <code>lab.css</code> holds simulator layout + full paper-board styling (node/port/sticky/topbar/mmap/menus/toast).<br>
+                    <strong style="color:var(--hot-pink)">tests/</strong> — Node proofs: <code>wiki-engine.test.js</code> checks UMD, esc/sanitize, transforms/zoom, port geometry, URL builders, board CRUD + dedup, CRDT apply/merge, serialize, COLS; <code>viz.test.js</code> checks esc and SVG builders XSS-safe.<br>
+                </div>
+            </div>
+            <div class="deep-card">
+                <h3><i class="fas fa-comment-dots"></i> Interview Guide</h3>
+                <div style="font-family:var(--font-pixel); font-size:.84rem; line-height:1.8; color:var(--text-muted)">
+                    <strong>30-sec pitch:</strong> “WikiBoard is an infinite-canvas research board. You search Wikipedia, drag articles as cards, click links to spawn related cards, draw arrows — all in one world element moved via <code>translate+scale</code>. It talks to Wikipedia straight from the browser with <code>origin=*</code>, sanitises HTML via <code>DOMParser</code> + allow-list, and syncs ops via a tiny CRDT so two peers can merge boards.”<br><br>
+                    <strong>Q: How does the infinite canvas work?</strong> A: One <code>world</code> div with <code>transform = translate(tx,ty) scale(s)</code>. Never move cards for navigation — move one container. Cards store world coords; convert clicks with <code>c2w = (cx - tx)/scale</code>.<br>
+                    <strong>Q: Zoom toward cursor?</strong> A: Clamp scale, ratio <code>r = new/old</code>, shift pan so cursor point stays fixed: <code>tx = cx - r*(cx - tx)</code>.<br>
+                    <strong>Q: Wikipedia CORS?</strong> A: Wikipedia supports anonymous cross-origin if you pass <code>origin=*</code>. So <code>fetch</code> works with no backend.<br>
+                    <strong>Q: XSS from Wikipedia HTML?</strong> A: Parse inertly, keep first 5 paragraphs &gt;15 chars, convert <code>&lt;b&gt;</code>→<code>&lt;strong&gt;</code>, strip every tag except <code>strong/br</code> via regex, fallback escaped text.<br>
+                    <strong>Q: Connections stay attached?</strong> A: SVG layer lives <em>inside</em> world, so it scales/pans automatically. On drag we recompute endpoints via <code>portAnchor + bestSides + mkPath</code>.<br>
+                    <strong>Q: CRDT?</strong> A: Each mutation is an op with lamport clock. <code>mergeOps</code> deduplicates by id keeping higher lamport/ts; <code>syncMerge</code> applies missing ops idempotently — LWW for node fields.<br>
+                    <strong>Q: Scale to hundreds of cards?</strong> A: Cache API results, lazy-load images, virtualise off-screen cards (minimap gives overview) + cull renders.<br>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <div id="overlay">
+        <h1>WIKI BOARD</h1>
+        <p>INFINITE CANVAS · WIKIPEDIA LIVE · CRDT SYNC</p>
+        <p style="color:#999">SEARCH TO OPEN · DRAG PORTS TO CONNECT · RIGHT-CLICK FOR OPTIONS</p>
+        <button class="big-btn" onclick="initBoard()">START RESEARCHING</button>
+    </div>
+    <div id="tip"></div>
+    <div class="scroll-progress" id="scrollProgress"></div>
+
+    <footer class="cyber-footer">
+        <div class="footer-content">
+            <div class="footer-logo">WIKI<span class="accent">Board</span> by Rahul Raj Singh</div>
+            <p style="color:#888; font-family:var(--font-pixel); margin:.5rem 0 1rem;">Infinite canvas · Wikipedia live · CRDT sync · Y2K maximalist · UMD engine</p>
+        </div>
+        <div class="footer-links">
+            <a href="https://github.com/rahulrajsinghwork15072005-a11y/wikiConnect" target="_blank" rel="noopener noreferrer"><i class="fab fa-github"></i> GitHub wikiConnect</a>
+            <a href="https://github.com/rahulrajsinghwork15072005-a11y" target="_blank" rel="noopener noreferrer"><i class="fas fa-user"></i> Profile</a>
+            <a href="mailto:rahulrajsingh.work.15072005@gmail.com"><i class="fas fa-envelope"></i> Email</a>
+        </div>
+        <div class="footer-tags" style="margin-top:1.2rem"><span>WIKI</span><span>BOARD</span><span>INFINITE</span><span>CANVAS</span><span>CRDT</span><span>WIKIPEDIA</span><span>SVG</span><span>Y2K</span></div>
+    </footer>
+
+    <script src="wiki-engine.js"></script>
+    <script src="wiki-library.js"></script>
+    <script src="viz.js"></script>
+    <script src="app-integration.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

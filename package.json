@@ -1,0 +1,16 @@
+{
+  "name": "wikiboard",
+  "version": "2.0.0",
+  "description": "WikiBoard — infinite-canvas research board powered by live Wikipedia: search, drag article cards, spawn related, draw connections, CRDT sync. UMD for browser/Worker/Node.",
+  "main": "wiki-engine.js",
+  "scripts": {
+    "test": "node tests/run-tests.js",
+    "test:engine": "node tests/wiki-engine.test.js",
+    "test:viz": "node tests/viz.test.js",
+    "start": "npx http-server -p 5502 -c-1"
+  },
+  "keywords": ["wikipedia", "research-board", "infinite-canvas", "crdt", "viz", "mindmap", "umd", "webworker", "svg", "xss-safe"],
+  "author": "Rahul Raj Singh",
+  "license": "MIT",
+  "type": "commonjs"
+}
